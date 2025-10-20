@@ -10,8 +10,10 @@
     "test": "jest"
   },
   "dependencies": {
+    "axios": "^1.12.2",
     "react": "18.2.0",
     "react-native": "0.73.6",
+    "react-native-document-picker": "^9.3.1",
     "react-native-dotenv": "^3.4.11",
     "react-native-track-player": "^4.1.2",
     "react-native-vector-icons": "^10.3.0"

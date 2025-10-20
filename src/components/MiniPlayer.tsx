@@ -41,7 +41,7 @@ const MiniPlayer: React.FC = () => {
 const styles = StyleSheet.create({
   miniPlayerBar: {
     position: 'absolute',
-    bottom: 0,
+    bottom: 65, // Above the TabBar
     left: 0,
     right: 0,
     height: 60,

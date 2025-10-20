@@ -102,6 +102,10 @@ android {
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
         }
     }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17 // Use 17 for modern Android
+        targetCompatibility JavaVersion.VERSION_17
+    }
 }
 
 dependencies {
