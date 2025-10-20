@@ -4,7 +4,10 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { usePlayerContext } from '../contexts/PlayerContext';
-const Icon = MaterialIcons as unknown as React.ComponentClass<any, any>;
+import Ionicons from 'react-native-vector-icons/Ionicons';
+const Icon = Ionicons as unknown as React.ComponentClass<any, any>;
+
+
 
 const MiniPlayer: React.FC = () => {
   const { currentTrack, isPlaying, isBuffering, togglePlayback } = usePlayerContext();
@@ -14,7 +17,7 @@ const MiniPlayer: React.FC = () => {
     return null; 
   }
 
-  const playPauseIcon = isPlaying ? 'pause-circle-filled' : 'play-circle-filled';
+  const playPauseIcon = isPlaying ? 'pause-circle' : 'play-circle';
 
   return (
     <View style={styles.miniPlayerBar}>
@@ -27,7 +30,7 @@ const MiniPlayer: React.FC = () => {
           <ActivityIndicator size="small" color="#FFF" style={{ marginRight: 10 }} />
         ) : (
           <TouchableOpacity onPress={togglePlayback}>
-            <Icon name={playPauseIcon} size={40} color="white" />
+            <Ionicons name={playPauseIcon} size={40} color="white" />
           </TouchableOpacity>
         )}
       </View>
@@ -38,7 +41,7 @@ const MiniPlayer: React.FC = () => {
 const styles = StyleSheet.create({
   miniPlayerBar: {
     position: 'absolute',
-    bottom: 0,
+    bottom: 65, // Above the TabBar
     left: 0,
     right: 0,
     height: 60,
