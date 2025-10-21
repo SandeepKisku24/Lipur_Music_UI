@@ -1,11 +1,7 @@
 // Lipur_ui/src/components/TabBar.tsx
-
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialIcons'; 
-
-// Type assertion for the icon component (to bypass TypeScript errors)
-const VectorIcon = Icon as unknown as React.ComponentClass<any, any>; 
+import { IconButton } from 'react-native-paper';
 
 interface TabBarProps {
   activeTab: string;
@@ -15,9 +11,9 @@ interface TabBarProps {
 const TabBar: React.FC<TabBarProps> = ({ activeTab, setTab }) => {
   const tabs = [
     { name: 'Home', icon: 'home' },
-    { name: 'Search', icon: 'search' },
-    { name: 'Library', icon: 'my-library-music' },
-    { name: 'Profile', icon: 'person' },
+    { name: 'Search', icon: 'magnify' },
+    { name: 'Library', icon: 'book' },
+    { name: 'Profile', icon: 'account-circle' },
   ];
 
   return (
@@ -25,14 +21,14 @@ const TabBar: React.FC<TabBarProps> = ({ activeTab, setTab }) => {
       {tabs.map((tab) => {
         const isActive = activeTab === tab.name;
         const color = isActive ? 'white' : '#B3B3B3';
-        
+
         return (
           <TouchableOpacity
             key={tab.name}
             style={styles.tabButton}
             onPress={() => setTab(tab.name)}
           >
-            <VectorIcon name={tab.icon} size={24} color={color} />
+            <IconButton icon={tab.icon} size={28} iconColor={color} />
             <Text style={[styles.tabText, { color }]}>{tab.name}</Text>
           </TouchableOpacity>
         );
@@ -48,11 +44,10 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     flexDirection: 'row',
-    height: 65, // Standard TabBar height
-    backgroundColor: '#282828', // Dark background
-    borderTopWidth: 0,
+    height: 65,
+    backgroundColor: '#282828',
     paddingBottom: 5,
-    zIndex: 10, // Ensure it is above everything else
+    zIndex: 10,
   },
   tabButton: {
     flex: 1,

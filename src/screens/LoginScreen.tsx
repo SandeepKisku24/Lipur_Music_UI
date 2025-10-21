@@ -39,11 +39,11 @@ const LoginScreen: React.FC = () => {
     await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
     const userInfo = await GoogleSignin.signIn();
 
-    console.log('Full Google user info:', JSON.stringify(userInfo, null, 2));
+    // console.log('Full Google user info:', JSON.stringify(userInfo, null, 2));
 
     const idToken = (userInfo as any).data?.idToken;
     if (!idToken) throw new Error("Failed to get ID Token from Google");
-    // console.log("Google ID Token:", idToken);
+    console.log("Google ID Token:", idToken);
 
     const googleCredential = auth.GoogleAuthProvider.credential(idToken);
     const userCredential = await auth().signInWithCredential(googleCredential);
@@ -52,9 +52,18 @@ const LoginScreen: React.FC = () => {
     const firebaseIDToken = await userCredential.user.getIdToken();
 
     // 🔹 Send token to backend to register/login user in Firestore
+    // const response = await axios.post("https://lipur-backend.onrender.com/register", {
     const response = await axios.post("http://10.0.2.2:8080/register", {
       idToken: firebaseIDToken,
     });
+
+    // const response = await axios.post(
+    //   "https://lipur-backend.onrender.com/register",
+    //   {
+    //     idToken: firebaseIDToken, // only ID token is required
+    //   },
+    //   { headers: { "Content-Type": "application/json" } }
+    // );
 
     console.log("Backend response:", response.data);
 
@@ -105,11 +114,13 @@ const LoginScreen: React.FC = () => {
                         <ActivityIndicator color="white" />
                     ) : (
                         <View style={styles.buttonContent}>
-                            <VectorIcon name="vpn-key" size={20} color="white" style={{marginRight: 10}}/>
+                            {/* Using same size/color as tab bar */}
+                            <Icon name="account-circle" size={28} color="white" style={{marginRight: 12}} />
                             <Text style={styles.buttonText}>Sign in with Google</Text>
                         </View>
                     )}
                 </TouchableOpacity>
+
 
                 {/* Phone/OTP Button (Placeholder for now) */}
                 <TouchableOpacity 

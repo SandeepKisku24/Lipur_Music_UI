@@ -3,6 +3,7 @@
 import axios from 'axios';
 import { BASE_API   } from '@env'; // Use your environment variable base URL
 
+// const UPLOAD_URL = `https://lipur-backend.onrender.com/upload`; 
 const UPLOAD_URL = `http://10.0.2.2:8080/upload`; 
 
 export interface UploadMetadata {
