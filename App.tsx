@@ -1,18 +1,35 @@
+// Lipur_ui/App.tsx (Updated Root)
 
 import React from 'react';
-import HomeScreen from './src/screens/Homescreen.tsx';
-import { StatusBar } from 'react-native';
 import { PlayerProvider } from './src/contexts/PlayerContext.tsx';
+import { AuthProvider, useAuth } from './src/contexts/AuthContext.tsx'; // NEW
 import MainRouter from './src/screens/MainRouter.tsx';
+import LoginScreen from './src/screens/LoginScreen.tsx'; 
+import { ActivityIndicator, View } from 'react-native';
+
+// Top-level component to decide which router to render
+const RootNavigation = () => {
+    const { userUID, isLoading } = useAuth();
+
+    if (isLoading) {
+        return (
+            <View style={{ flex: 1, justifyContent: 'center', backgroundColor: '#121212' }}>
+                <ActivityIndicator size="large" color="#1DB954" />
+            </View>
+        );
+    }
+    
+    // RENDER LOGIC: If UID exists, show Main Tabs. Otherwise, show Login.
+    return userUID ? <MainRouter /> : <LoginScreen />; 
+};
+
 const App = () => {
   return (
-  
+    <AuthProvider>
       <PlayerProvider> 
-      <MainRouter />
-      {/* <StatusBar barStyle="light-content" backgroundColor="#121212" />
-      <HomeScreen /> */}
-    </PlayerProvider>
-    
+        <RootNavigation />
+      </PlayerProvider>
+    </AuthProvider>
   );
 };
 
