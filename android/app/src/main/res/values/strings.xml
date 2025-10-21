@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Lipur_ui</string>
+    <string name="default_web_client_id" translatable="false">248925932805-itqu8cpfolffqdhot0h238gc2v8cm191.apps.googleusercontent.com</string>
 </resources>
