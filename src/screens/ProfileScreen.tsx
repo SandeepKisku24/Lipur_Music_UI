@@ -1,35 +1,44 @@
-// Lipur_ui/src/screens/ProfileScreen.tsx (Updated to handle screen switching)
-
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView } from 'react-native';
-import UploadScreen from './UploadScreen'; // <--- NEW IMPORT
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Image } from 'react-native';
+import UploadScreen from './UploadScreen';
+import { useAuth } from '../contexts/AuthContext'; // ✅ Import the AuthContext
 
 const ProfileScreen: React.FC = () => {
-    // State to manage whether the upload form is visible
-    const [isUploading, setIsUploading] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const { userName, userEmail } = useAuth(); // ✅ Access name & email
 
-    if (isUploading) {
-        // Render the upload form if state is true
-        return <UploadScreen onClose={() => setIsUploading(false)} />;
-    }
+  if (isUploading) {
+    return <UploadScreen onClose={() => setIsUploading(false)} />;
+  }
 
-    return (
-        <SafeAreaView style={styles.container}>
-            <Text style={styles.header}>Profile</Text>
-            
-            {/* Upload Music Button */}
-            <TouchableOpacity 
-                style={styles.uploadButton} 
-                onPress={() => setIsUploading(true)} // <--- SWITCH STATE
-            >
-                <Text style={styles.buttonText}>Upload Music</Text>
-            </TouchableOpacity>
+  return (
+    <SafeAreaView style={styles.container}>
+      <Text style={styles.header}>Profile</Text>
 
-            <Text style={styles.smallText}>Other profile settings coming soon.</Text>
-        </SafeAreaView>
-    );
+      {/* Profile info section */}
+      <View style={styles.profileBox}>
+        <Image
+          source={{
+            uri: 'https://cdn-icons-png.flaticon.com/512/847/847969.png', // Default avatar
+          }}
+          style={styles.avatar}
+        />
+        <Text style={styles.name}>{userName || 'Guest User'}</Text>
+        <Text style={styles.email}>{userEmail || 'No Email Found'}</Text>
+      </View>
+
+      {/* Upload Music Button */}
+      <TouchableOpacity
+        style={styles.uploadButton}
+        onPress={() => setIsUploading(true)}
+      >
+        <Text style={styles.buttonText}>Upload Music</Text>
+      </TouchableOpacity>
+
+      <Text style={styles.smallText}>Other profile settings coming soon.</Text>
+    </SafeAreaView>
+  );
 };
-
 
 const styles = StyleSheet.create({
   container: {
@@ -41,10 +50,30 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: 'bold',
     color: 'white',
+    marginBottom: 30,
+  },
+  profileBox: {
+    alignItems: 'center',
     marginBottom: 40,
   },
+  avatar: {
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    marginBottom: 15,
+  },
+  name: {
+    fontSize: 22,
+    color: 'white',
+    fontWeight: '600',
+  },
+  email: {
+    fontSize: 16,
+    color: '#B3B3B3',
+    marginTop: 5,
+  },
   uploadButton: {
-    backgroundColor: '#1DB954', // Spotify green/accent color
+    backgroundColor: '#1DB954',
     paddingVertical: 15,
     paddingHorizontal: 30,
     borderRadius: 50,
