@@ -53,17 +53,17 @@ const LoginScreen: React.FC = () => {
 
     // 🔹 Send token to backend to register/login user in Firestore
     // const response = await axios.post("https://lipur-backend.onrender.com/register", {
-    const response = await axios.post("http://10.0.2.2:8080/register", {
-      idToken: firebaseIDToken,
-    });
+    // const response = await axios.post("http://10.0.2.2:8080/register", {
+    //   idToken: firebaseIDToken,
+    // });
 
-    // const response = await axios.post(
-    //   "https://lipur-backend.onrender.com/register",
-    //   {
-    //     idToken: firebaseIDToken, // only ID token is required
-    //   },
-    //   { headers: { "Content-Type": "application/json" } }
-    // );
+    const response = await axios.post(
+      "https://lipur-backend.onrender.com/register",
+      {
+        idToken: firebaseIDToken, // only ID token is required
+      },
+      { headers: { "Content-Type": "application/json" } }
+    );
 
     console.log("Backend response:", response.data);
 

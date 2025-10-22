@@ -44,7 +44,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     flexDirection: 'row',
-    height: 65,
+    height: 60,
     backgroundColor: '#282828',
     paddingBottom: 5,
     zIndex: 10,
@@ -53,7 +53,8 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingTop: 5,
+    paddingTop: 2,
+    marginBottom: 10,
   },
   tabText: {
     fontSize: 10,

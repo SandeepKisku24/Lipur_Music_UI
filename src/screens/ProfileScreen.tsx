@@ -1,15 +1,40 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Image, Alert } from 'react-native';
 import UploadScreen from './UploadScreen';
 import { useAuth } from '../contexts/AuthContext'; // ✅ Import the AuthContext
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
 
 const ProfileScreen: React.FC = () => {
   const [isUploading, setIsUploading] = useState(false);
-  const { userName, userEmail } = useAuth(); // ✅ Access name & email
+  const { userName, userEmail,logout } = useAuth(); // ✅ Access name & email
 
   if (isUploading) {
     return <UploadScreen onClose={() => setIsUploading(false)} />;
   }
+
+  const handleLogout = async () => {
+    Alert.alert(
+      'Logout',
+      'Are you sure you want to log out?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Logout',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await GoogleSignin.signOut(); // ✅ Logout from Google if signed in
+            } catch (error) {
+              console.warn('Google SignOut error:', error);
+            }
+            await logout(); // ✅ Clear local session
+            console.log('✅ User logged out completely.');
+          },
+        },
+      ],
+      { cancelable: true }
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -34,6 +59,11 @@ const ProfileScreen: React.FC = () => {
       >
         <Text style={styles.buttonText}>Upload Music</Text>
       </TouchableOpacity>
+
+      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+        <Text style={styles.logoutText}>Logout</Text>
+      </TouchableOpacity>
+
 
       <Text style={styles.smallText}>Other profile settings coming soon.</Text>
     </SafeAreaView>
@@ -81,6 +111,19 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   buttonText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  logoutButton: {
+    backgroundColor: '#E53935',
+    paddingVertical: 15,
+    paddingHorizontal: 30,
+    borderRadius: 50,
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  logoutText: {
     color: 'white',
     fontSize: 18,
     fontWeight: 'bold',

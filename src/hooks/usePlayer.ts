@@ -1,7 +1,5 @@
-// Lipur_ui/src/hooks/usePlayer.ts (Final Corrected Code)
-
 import { useState, useEffect } from 'react';
-import TrackPlayer, { State, Capability, usePlaybackState } from 'react-native-track-player';
+import TrackPlayer, { State, Capability, usePlaybackState,useProgress } from 'react-native-track-player';
 import { Track } from '../types';
 import { getStreamingUrl } from '../api';
 
@@ -10,39 +8,37 @@ interface PlayerState {
   isPlaying: boolean;
   isBuffering: boolean;
   playbackState: State;
+  currentIndex: number;
+  playlist: Track[];
 }
 
 const initialPlayerState: PlayerState = {
   isPlaying: false,
   isBuffering: false,
-  playbackState: State.None, 
+  playbackState: State.None,
+  currentIndex: -1,
+  playlist: [],
 };
 
-// Define the setup options object inline. 
-// We use a type assertion 'as any' to bypass the missing 'stopWithApp' property in the official types, 
-// ensuring the native code still receives the correct configuration.
-const playerSetupOptions = {
-  // This property enables background playback even when the app is swiped away
-  stopWithApp: true, 
-} as any; 
-
+const playerSetupOptions = { stopWithApp: true } as any;
 let isSetup = false;
 
 export const useTrackPlayer = () => {
   const playbackState = usePlaybackState();
   const [playerState, setPlayerState] = useState<PlayerState>(initialPlayerState);
-  // const [isPlayerInitialized, setIsPlayerInitialized] = useState(false);
+  const progress = useProgress();
 
-  // 1. Setup the player
+  const seekTo = async (newPosition: number) => { // <--- NEW METHOD
+        await TrackPlayer.seekTo(newPosition);
+    };
+
+  // Player setup
   useEffect(() => {
     if (!isSetup) {
       const setup = async () => {
         try {
-          // Pass the playerSetupOptions object
-          await TrackPlayer.setupPlayer(playerSetupOptions); 
-          
+          await TrackPlayer.setupPlayer(playerSetupOptions);
           await TrackPlayer.updateOptions({
-            // Define capabilities for lock screen/notification controls
             capabilities: [
               Capability.Play,
               Capability.Pause,
@@ -53,104 +49,120 @@ export const useTrackPlayer = () => {
           });
           isSetup = true;
         } catch (error) {
-          console.error("TrackPlayer setup failed:", error);
+          console.error('TrackPlayer setup failed:', error);
         }
       };
       setup();
     }
   }, []);
 
-  // 2. Update player state based on TrackPlayer events
+  // Sync playback state
   useEffect(() => {
-    // Check if playbackState.state is defined before using it
     if (playbackState.state !== undefined) {
-      const isPlaying = playbackState.state === State.Playing;
-      const isBuffering = playbackState.state === State.Buffering;
-
-      // Explicitly type the returned function to satisfy TypeScript
-      setPlayerState((prev): PlayerState => ({ 
+      setPlayerState(prev => ({
         ...prev,
-        isPlaying,
-        isBuffering,
-        playbackState: playbackState.state, 
+        isPlaying: playbackState.state === State.Playing,
+        isBuffering: playbackState.state === State.Buffering,
+        playbackState: playbackState.state,
       }));
     }
   }, [playbackState]);
 
-  // Public methods
+  useEffect(() => {
+  console.log(
+    `[useTrackPlayer] progress: position=${progress.position.toFixed(2)}, duration=${progress.duration.toFixed(2)}`
+  );
+}, [progress.position, progress.duration]);
 
 
+  // Internal helper
+  const cleanupMalformedUrl = (malformedUrl: string, originalTrackUrl: string): string => {
+    const authIndex = malformedUrl.indexOf('?Authorization=');
+    if (authIndex === -1) return originalTrackUrl;
+    const authPart = malformedUrl.substring(authIndex);
+    const baseUrlMatch = originalTrackUrl.match(/https:\/\/f005\.backblazeb2\.com\/file\/LipurMusic\//);
+    if (!baseUrlMatch) return originalTrackUrl;
+    const basePath = baseUrlMatch[0];
+    const fileName = originalTrackUrl.substring(basePath.length);
+    return `${basePath}${encodeURIComponent(fileName)}${authPart}`;
+  };
 
+  // Play a specific track
+  const playTrack = async (track: Track, playlist: Track[] = []) => {
+  if (!isSetup) return;
 
-const playTrack = async (track: Track) => {
-    if (!isSetup) return;
-    
-    const cleanupMalformedUrl = (malformedUrl: string, originalTrackUrl: string): string => {
-        // 1. Find the start of the Authorization token
-        const authIndex = malformedUrl.indexOf('?Authorization=');
-        if (authIndex === -1) return originalTrackUrl; // Should not happen
+  try {
+    // Find index within playlist
+    const trackIndex = playlist.findIndex(t => t.id === track.id);
+    console.log("Setting index:", trackIndex);
 
-        // 2. Extract ONLY the Authorization part
-        const authPart = malformedUrl.substring(authIndex);
-        
-        // 3. Extract the clean base path and filename from the ORIGINAL track URL.
-        // This is safe because the original track.url is what the backend expects to sign.
-        const baseUrlMatch = originalTrackUrl.match(/https:\/\/f005\.backblazeb2\.com\/file\/LipurMusic\//);
-        if (!baseUrlMatch) return originalTrackUrl;
-        
-        const basePath = baseUrlMatch[0];
-        const fileName = originalTrackUrl.substring(basePath.length); // e.g., "let her go.mp3"
+    // Update local state (currentTrack, index, etc.)
+    setPlayerState(prev => ({
+      ...prev,
+      currentTrack: track,
+      isBuffering: true,
+      playlist: playlist.length ? playlist : prev.playlist, // keep old if not passed
+      currentIndex: trackIndex >= 0 ? trackIndex : prev.currentIndex,
+    }));
 
-        // 4. Reconstruct the correct final URL: BasePath + ENCODED Filename + AuthToken
-        // We use encodeURIComponent only on the filename to fix the spaces.
-        return `${basePath}${encodeURIComponent(fileName)}${authPart}`;
-    };
+    const signedUrl = await getStreamingUrl(track.url);
+    const cleanedUrl = cleanupMalformedUrl(signedUrl, track.url);
 
-    try {
-        // 1. Show the track is loading (visually confirm the click worked)
-        setPlayerState(prev => ({ ...prev, currentTrack: track, isBuffering: true }));
-        
-        // 2. Fetch the dynamic signed URL using the RESTRICTED track.url
-        // (track.url is mapped from song.fileUrl in api.ts)
-        const signedStreamingUrl = await getStreamingUrl(track.url); 
-        const cleanedUrl = cleanupMalformedUrl(signedStreamingUrl, track.url);
-        console.log('Obtained signed streaming URL:', signedStreamingUrl);
-        // 3. Prepare the track for TrackPlayer with the SIGNED URL
-        const trackForPlayer = {
-            ...track,
-            // TrackPlayer requires 'url', so we overwrite the restricted URL
-            url: cleanedUrl, 
-        };
+    const trackForPlayer = { ...track, url: cleanedUrl };
 
-        // 4. Load and play the track
-        await TrackPlayer.reset();
-        await TrackPlayer.add([trackForPlayer]);
-        await TrackPlayer.play();
-        
-        // 5. Update state (currentTrack remains the same, state updates via useEffect)
-        setPlayerState(prev => ({ ...prev, currentTrack: track })); 
-        
-    } catch (error) {
-        console.error('Failed to stream song:', error);
-        // Reset player state to indicate failure
-        setPlayerState(prev => ({ ...prev, isBuffering: false, isPlaying: false, currentTrack: undefined }));
-    }
+    await TrackPlayer.reset();
+    await TrackPlayer.add([trackForPlayer]);
+    await TrackPlayer.play();
+  } catch (error) {
+    console.error('Failed to stream song:', error);
+    setPlayerState(prev => ({
+      ...prev,
+      isBuffering: false,
+      isPlaying: false,
+      currentTrack: undefined,
+    }));
+  }
 };
 
+  //  Play/Pause toggle
   const togglePlayback = async () => {
+    console.log(playerState['currentIndex']);
     if (playerState.currentTrack) {
-      if (playerState.isPlaying) {
-        await TrackPlayer.pause();
-      } else {
-        await TrackPlayer.play();
-      }
+      if (playerState.isPlaying) await TrackPlayer.pause();
+      else await TrackPlayer.play();
+    }
+  };
+
+  //  Next track
+  const playNextTrack = async () => {
+    console.log(playerState['currentIndex']);
+    const { playlist, currentIndex } = playerState;
+    if (currentIndex < playlist.length - 1) {
+      const nextTrack = playlist[currentIndex + 1];
+      await playTrack(nextTrack, playlist);
+    }
+  };
+
+  //  Previous track
+  const playPreviousTrack = async () => {
+    console.log(playerState['currentIndex']);
+    const { playlist, currentIndex } = playerState;
+    if (currentIndex > 0) {
+      const prevTrack = playlist[currentIndex - 1];
+      await playTrack(prevTrack, playlist);
     }
   };
 
   return {
     ...playerState,
+    duration: progress.duration,     // Total track duration in seconds
+    position: progress.position,     // Current playback position
+    buffered: progress.buffered,
     playTrack,
     togglePlayback,
+    playNextTrack,
+    seekTo,
+    playPreviousTrack,
     isSetup,
   };
 };
@@ -160,7 +172,15 @@ export type UseTrackPlayerReturn = {
   isPlaying: boolean;
   isBuffering: boolean;
   playbackState: State;
-  playTrack: (track: Track) => Promise<void>;
+  currentIndex: number;
+  playlist: Track[];
+  playTrack: (track: Track, playlist?: Track[]) => Promise<void>;
   togglePlayback: () => Promise<void>;
+  playNextTrack: () => Promise<void>;
+  playPreviousTrack: () => Promise<void>;
   isSetup: boolean;
+  duration: number;
+  position: number;
+  buffered: number;
+  seekTo: (newPosition: number) => Promise<void>;
 };

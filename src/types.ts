@@ -23,4 +23,7 @@ export interface Track {
   title: string;
   artist: string; // Maps to artistName
   artwork: string; // Maps to coverUrl
+  likes: number; // Optional likes property
+  playCount: number; // Optional playCount property
+  duration: number; // Optional duration property
 }
