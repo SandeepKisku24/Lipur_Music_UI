@@ -9,7 +9,7 @@ import PlaybackSlider from './PlaybackSlider';
 const Icon = Ionicons as unknown as React.ComponentClass<any, any>;
 
 
-const SLIDER_HEIGHT = 40; // Approx height needed for slider container (20px slider + padding)
+const SLIDER_HEIGHT = 70; // Approx height needed for slider container (20px slider + padding)
 const BAR_HEIGHT = 60;   // Height of the controls/text bar
 const TOTAL_PLAYER_HEIGHT = SLIDER_HEIGHT + BAR_HEIGHT; // 100px total
 

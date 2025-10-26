@@ -1,7 +1,7 @@
 // Defines the structure of a song object returned by your backend API
 export interface SongApiData {
-  artistId: string;
-  artistName: string;
+  artistId: string[];
+  artistNames: string[];
   coverUrl: string;
   downloads: number;
   duration: number;
@@ -22,6 +22,7 @@ export interface Track {
   url: string; // Maps to fileUrl
   title: string;
   artist: string; // Maps to artistName
+  artistNames: string[]; // Optional array of artist names
   artwork: string; // Maps to coverUrl
   likes: number; // Optional likes property
   playCount: number; // Optional playCount property

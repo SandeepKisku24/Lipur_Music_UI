@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import TrackPlayer, { State, Capability, usePlaybackState,useProgress } from 'react-native-track-player';
+import TrackPlayer, { AppKilledPlaybackBehavior,State, Capability, usePlaybackState,useProgress,Event } from 'react-native-track-player';
 import { Track } from '../types';
 import { getStreamingUrl } from '../api';
 
@@ -31,6 +31,31 @@ export const useTrackPlayer = () => {
   const seekTo = async (newPosition: number) => { // <--- NEW METHOD
         await TrackPlayer.seekTo(newPosition);
     };
+  
+  // handle intruptions and app killed behavior
+
+  useEffect(() => {
+  const handleInterruption = async (event: any) => {
+    console.log('[Audio Interruption]', event);
+
+    if (event.type === Event.RemoteDuck) {
+      if (event.paused) {
+        console.log('Audio focus lost or call incoming — pausing playback');
+        await TrackPlayer.pause();
+      } else if (event.permanent) {
+        console.log('Permanent audio focus loss');
+        await TrackPlayer.stop();
+      } else {
+        console.log('Audio focus regained');
+        await TrackPlayer.play();
+      }
+    }
+  };
+
+  const sub = TrackPlayer.addEventListener(Event.RemoteDuck, handleInterruption);
+
+  return () => sub.remove();
+}, []);
 
   // Player setup
   useEffect(() => {
@@ -39,14 +64,19 @@ export const useTrackPlayer = () => {
         try {
           await TrackPlayer.setupPlayer(playerSetupOptions);
           await TrackPlayer.updateOptions({
+            stoppingAppPausesPlayback: true,
+            android: {
+              appKilledPlaybackBehavior: AppKilledPlaybackBehavior.StopPlaybackAndRemoveNotification,
+            },
             capabilities: [
-              Capability.Play,
-              Capability.Pause,
-              Capability.SkipToNext,
-              Capability.SkipToPrevious,
-            ],
-            compactCapabilities: [Capability.Play, Capability.Pause],
-          });
+                Capability.Play,
+                Capability.Pause,
+                Capability.SkipToNext,
+                Capability.SkipToPrevious,
+                Capability.SeekTo,],
+              compactCapabilities: [Capability.Play, Capability.Pause],
+            });
+
           isSetup = true;
         } catch (error) {
           console.error('TrackPlayer setup failed:', error);
@@ -72,6 +102,11 @@ export const useTrackPlayer = () => {
   console.log(
     `[useTrackPlayer] progress: position=${progress.position.toFixed(2)}, duration=${progress.duration.toFixed(2)}`
   );
+  if(progress.position && progress.duration && progress.duration <= progress.position){
+    // Track ended
+    console.log("Track ended, playing next...");
+    playNextTrack();
+  }
 }, [progress.position, progress.duration]);
 
 

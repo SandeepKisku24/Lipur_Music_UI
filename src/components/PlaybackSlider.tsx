@@ -64,32 +64,33 @@ const PlaybackSlider: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-    container: {
-        width: '100%',
-        backgroundColor: '#303030',
-    },
-    touchArea: {
-        // **60px HUGE TOUCH AREA**
-        height: 60,
-        justifyContent: 'center',
-        paddingVertical: 20,
-    },
-    slider: {
-        width: '100%',
-        height: 40, // **TALL SLIDER**
-    },
-    timeContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        width: '100%',
-        paddingHorizontal: 15,
-        marginTop: 2,
-    },
-    timeText: {
-        color: '#B3B3B3',
-        fontSize: 12,
-        fontWeight: '500',
-    },
+  container: {
+    width: '100%',
+    backgroundColor: '#303030',
+    paddingBottom: 5,
+    paddingTop: 5,
+  },
+  touchArea: {
+    justifyContent: 'center',
+    height: 30, // space for slider only
+  },
+  slider: {
+    width: '100%',
+    height: 30,
+  },
+  timeContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+    paddingHorizontal: 15,
+    marginTop: 2,
+  },
+  timeText: {
+    color: '#B3B3B3',
+    fontSize: 12,
+    fontWeight: '500',
+  },
 });
+
 
 export default PlaybackSlider;

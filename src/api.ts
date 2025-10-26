@@ -3,10 +3,10 @@
 import { SongApiData, Track } from './types';
 import { API_ENDPOINT } from '@env';
 // Use 10.0.2.2 to access the host machine's localhost from the Android Emulator
-// const API_URL = 'http://10.0.2.2:8080/songs';
-// const API_BASE_URL = 'http://10.0.2.2:8080';
-const API_URL = 'https://lipur-backend.onrender.com/songs';
-const API_BASE_URL = 'https://lipur-backend.onrender.com';
+const API_URL = 'http://10.0.2.2:8080/songs';
+const API_BASE_URL = 'http://10.0.2.2:8080';
+// const API_URL = 'https://lipur-backend.onrender.com/songs';
+// const API_BASE_URL = 'https://lipur-backend.onrender.com';
 
 export async function fetchSongs(): Promise<Track[]> {
   try {
@@ -21,11 +21,15 @@ export async function fetchSongs(): Promise<Track[]> {
     // Map the raw API data to the cleaner Track format required by react-native-track-player and UI
     const tracks: Track[] = data.songs.map(song => {
         const cleanCoverUrl = song.coverUrl.split('?')[0];
+        const namesArray = Array.isArray(song.artistNames) 
+            ? song.artistNames 
+            : [song.artistNames || 'Unknown Artist'];
         return {
       id: song.id,
       url: song.fileUrl,
       title: song.title,
-      artist: song.artistName,
+      artist: namesArray.join(', '),
+      artistNames: namesArray,
       likes: song.likes,
       playCount: song.playCount,
       duration: song.duration,

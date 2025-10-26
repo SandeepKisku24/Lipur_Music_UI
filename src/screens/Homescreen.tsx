@@ -21,8 +21,10 @@ const onMorePress = () => {
 // Component for a single song item in the list
 const SongListItem: React.FC<SongListItemProps> = ({ track,playTrack }) => {
     const encodedUri = encodeURI(track.artwork);
+
+    const artistList = track.artist;
     // console.log('Loading image from:', encodedUri);
-    console.log("track like", track.likes);
+    // console.log("track like", track.likes);
     return(
 
   <TouchableOpacity
@@ -37,7 +39,7 @@ const SongListItem: React.FC<SongListItemProps> = ({ track,playTrack }) => {
 
       <View style={styles.textContainer}>
         <Text style={styles.title} numberOfLines={1}>{track.title}</Text>
-        <Text style={styles.artist} numberOfLines={1}>{track.artist}</Text>
+        <Text style={styles.artist} numberOfLines={1}>{artistList}</Text>
 
         {/* <View style={styles.statsRow}>
           <View style={styles.iconWithText}>

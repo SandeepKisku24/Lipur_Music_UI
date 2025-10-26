@@ -3,17 +3,17 @@
 import axios from 'axios';
 import { BASE_API   } from '@env'; // Use your environment variable base URL
 
-const UPLOAD_URL = `https://lipur-backend.onrender.com/upload`; 
-// const UPLOAD_URL = `http://10.0.2.2:8080/upload`; 
+// const UPLOAD_URL = `https://lipur-backend.onrender.com/upload`; 
+const UPLOAD_URL = `http://10.0.2.2:8080/upload`; 
 
 export interface UploadMetadata {
     title: string;
-    artist: string;
     genre: string;
     coverUrl: string;
     createdYear: string;
     upload_user: string;
-    artistId?: string;
+    artists: string[];    
+    artistIds: string[];
 }
 
 // The file object comes from react-native-document-picker
@@ -41,9 +41,17 @@ export async function uploadSong(file: DocumentPickerResponse, metadata: UploadM
 
     // 3. Append all metadata fields
     Object.entries(metadata).forEach(([key, value]) => {
-        if (value) {
-            formData.append(key, value);
+    if (value) {
+        if (Array.isArray(value)) {
+            // Append each array item individually with the same key
+            value.forEach(item => {
+                if (item) formData.append(key, item); // e.g., formData.append('artists', 'sah')
+            });
+        } else {
+            // Append all other single values
+            formData.append(key, value); 
         }
+    }
     });
 
     // 4. Send the POST request

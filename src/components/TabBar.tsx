@@ -29,7 +29,7 @@ const TabBar: React.FC<TabBarProps> = ({ activeTab, setTab }) => {
             onPress={() => setTab(tab.name)}
           >
             <IconButton icon={tab.icon} size={28} iconColor={color} />
-            <Text style={[styles.tabText, { color }]}>{tab.name}</Text>
+            {/* <Text style={[styles.tabText, { color }]}>{tab.name}</Text> */}
           </TouchableOpacity>
         );
       })}
@@ -47,6 +47,7 @@ const styles = StyleSheet.create({
     height: 60,
     backgroundColor: '#282828',
     paddingBottom: 5,
+    paddingTop: 5,
     zIndex: 10,
   },
   tabButton: {
@@ -54,12 +55,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingTop: 2,
-    marginBottom: 10,
+    marginBottom: 2,
   },
   tabText: {
     fontSize: 10,
-    marginTop: 2,
     fontWeight: 'bold',
+    paddingBottom: 10,
   },
 });
 
