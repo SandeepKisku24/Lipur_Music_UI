@@ -72,3 +72,46 @@ export async function getStreamingUrl(restrictedFileUrl: string): Promise<string
         throw new Error('Could not retrieve streaming URL.');
     }
 }
+
+export async function fetchSongsByArtist(artistId: string): Promise<Track[]> {
+    // Note: API_BASE_URL is assumed to be 'http://10.0.2.2:8080'
+    const ARTIST_SONGS_URL = `${API_BASE_URL}/songs-by-artist?artistId=${artistId}`;
+    
+    try {
+        const response = await fetch(ARTIST_SONGS_URL);
+        console.log(`Fetching songs for artist ID: ${artistId}`);
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        
+        // The backend returns a JSON object like { songs: [...] }
+        const data: { songs: SongApiData[] } = await response.json();
+
+        // Re-use your existing robust mapping logic
+        const tracks: Track[] = data.songs.map(song => {
+            const cleanCoverUrl = song.coverUrl.split('?')[0];
+            const namesArray = Array.isArray(song.artistNames) 
+                ? song.artistNames 
+                : [song.artistNames || 'Unknown Artist'];
+                
+            return {
+                id: song.id,
+                url: song.fileUrl,
+                title: song.title,
+                artist: namesArray.join(', '),
+                artistNames: namesArray,
+                likes: song.likes || 0,
+                playCount: song.playCount || 0,
+                duration: song.duration || 0,
+                artwork: cleanCoverUrl,
+            };
+        });
+        
+        return tracks;
+        
+    } catch (error) {
+        console.error('Failed to fetch artist songs:', error);
+        return [];
+    }
+}
