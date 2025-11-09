@@ -6,6 +6,7 @@ import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { usePlayerContext } from '../contexts/PlayerContext';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import PlaybackSlider from './PlaybackSlider';
+import CustomSlider from './CustomSlider';
 const Icon = Ionicons as unknown as React.ComponentClass<any, any>;
 
 
@@ -22,7 +23,8 @@ const MiniPlayer: React.FC = () => {
     <View style={styles.playerContainer}>
       {/* SLIDER CONTAINER - Fixed positioning */}
       <View style={styles.sliderContainer}>
-        <PlaybackSlider />
+        {/* <PlaybackSlider /> */}
+        <CustomSlider />
       </View>
       
       {/* CONTROLS BAR */}
@@ -66,6 +68,7 @@ const styles = StyleSheet.create({
   sliderContainer: {
     height: SLIDER_HEIGHT, // 40px
     backgroundColor: '#303030',
+    width:'100%',
     // **CRITICAL FIX**: Allow touch events
     pointerEvents: 'box-none',
   },
