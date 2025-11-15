@@ -9,7 +9,8 @@ import { usePlayerContext } from '../contexts/PlayerContext';
 import { fetchSongsByArtist } from '../api';
 
 // --- Configuration ---
-const SEARCH_API_ENDPOINT = 'http://10.0.2.2:8080/search?q='; 
+// const SEARCH_API_ENDPOINT = 'http://10.0.2.2:8080/search?q='; 
+const SEARCH_API_ENDPOINT = 'https://lipur-backend.onrender.com/search?q='; 
 
 // Extend Track to include search-specific metadata (Type is essential for action handler)
 interface SearchResult extends Track {

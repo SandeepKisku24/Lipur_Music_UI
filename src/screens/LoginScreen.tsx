@@ -53,17 +53,17 @@ const LoginScreen: React.FC = () => {
 
     // 🔹 Send token to backend to register/login user in Firestore
     // const response = await axios.post("https://lipur-backend.onrender.com/register", {
-    const response = await axios.post("http://10.0.2.2:8080/register", {
-      idToken: firebaseIDToken,
-    });
+    // const response = await axios.post("http://10.0.2.2:8080/register", {
+    //   idToken: firebaseIDToken,
+    // });
 
-    // const response = await axios.post(
-    //   "https://lipur-backend.onrender.com/register",
-    //   {
-    //     idToken: firebaseIDToken, // only ID token is required
-    //   },
-    //   { headers: { "Content-Type": "application/json" } }
-    // );
+    const response = await axios.post(
+      "https://lipur-backend.onrender.com/register",
+      {
+        idToken: firebaseIDToken, // only ID token is required
+      },
+      { headers: { "Content-Type": "application/json" } }
+    );
 
     console.log("Backend response:", response.data);
 
@@ -96,7 +96,7 @@ const LoginScreen: React.FC = () => {
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.logoContainer}>
-                <Text style={styles.logoText}>LIPUR</Text>
+                <Text style={styles.logoText}>Lipur</Text>
                 <Text style={styles.subtitle}>Music & Podcast</Text>
             </View>
 
@@ -148,7 +148,7 @@ const styles = StyleSheet.create({
         paddingTop: 50,
     },
     logoText: {
-        fontSize: 56,
+        fontSize: 40,
         fontWeight: 'bold',
         color: '#1DB954', // Spotify Green
     },
