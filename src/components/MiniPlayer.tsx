@@ -63,14 +63,15 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: TOTAL_PLAYER_HEIGHT, // 100px
-    zIndex: 100,
+    zIndex: 1000,
+    // pointerEvents: 'auto',
   },
   sliderContainer: {
     height: SLIDER_HEIGHT, // 40px
     backgroundColor: '#303030',
     width:'100%',
     // **CRITICAL FIX**: Allow touch events
-    pointerEvents: 'box-none',
+    // pointerEvents: 'auto',
   },
   miniPlayerBar: {
     height: BAR_HEIGHT, // 60px

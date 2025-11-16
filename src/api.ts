@@ -3,10 +3,10 @@
 import { SongApiData, Track } from './types';
 import { API_ENDPOINT } from '@env';
 
-// const API_URL = 'http://10.0.2.2:8080/songs';
-// const API_BASE_URL = 'http://10.0.2.2:8080';
-const API_URL = 'https://lipur-backend.onrender.com/songs';
-const API_BASE_URL = 'https://lipur-backend.onrender.com';
+const API_URL = 'http://10.0.2.2:8080/songs';
+const API_BASE_URL = 'http://10.0.2.2:8080';
+// const API_URL = 'https://lipur-backend.onrender.com/songs';
+// const API_BASE_URL = 'https://lipur-backend.onrender.com';
 
 export async function fetchSongs(): Promise<Track[]> {
   try {

@@ -8,6 +8,7 @@ import LoginScreen from './src/screens/LoginScreen.tsx';
 import { ActivityIndicator, View } from 'react-native';
 import { Provider as PaperProvider } from 'react-native-paper';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 
 // Top-level component to decide which router to render
 const RootNavigation = () => {
@@ -31,7 +32,9 @@ const App = () => {
     <PaperProvider>
     <AuthProvider>
       <PlayerProvider> 
-        <RootNavigation />
+        <BottomSheetModalProvider>
+          <RootNavigation />
+        </BottomSheetModalProvider>
       </PlayerProvider>
     </AuthProvider>
     </PaperProvider>

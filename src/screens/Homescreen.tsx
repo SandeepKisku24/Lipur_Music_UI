@@ -14,6 +14,7 @@ import {
 import { fetchSongs } from '../api';
 import { Track } from '../types';
 import MiniPlayer from '../components/MiniPlayer';
+import { Skeleton } from 'moti/skeleton';
 import { usePlayerContext } from '../contexts/PlayerContext';
 
 // 2. NEW COMPONENT: A small card for horizontal lists
@@ -45,6 +46,18 @@ const SongRow: React.FC<{
     return null;
   }
 
+  // 3. NEW COMPONENT: A placeholder card for the skeleton loader
+const SongCardSkeleton: React.FC = () => (
+  <View style={styles.cardContainer}>
+    <Skeleton colorMode="dark" width={150} height={150} radius={8} />
+    <View style={{ height: 8 }} />
+    <Skeleton colorMode="dark" width="90%" height={15} />
+    <View style={{ height: 3 }} />
+    <Skeleton colorMode="dark" width="60%" height={13} />
+  </View>
+);
+
+  
   return (
     <View style={styles.rowContainer}>
       <Text style={styles.rowTitle}>{title}</Text>
@@ -164,7 +177,6 @@ const HomeScreen: React.FC = () => {
         ))}
 
       </ScrollView>
-      <MiniPlayer />
     </View>
   );
 };
