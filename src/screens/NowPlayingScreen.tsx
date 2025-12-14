@@ -6,100 +6,120 @@ import {
     Image, 
     TouchableOpacity, 
     Dimensions, 
-    SafeAreaView 
+    SafeAreaView,
+    ImageBackground, 
+    Platform
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { usePlayerContext } from '../contexts/PlayerContext';
-import CustomSlider from '../components/CustomSlider'; // We'll reuse your slider
+import CustomSlider from '../components/CustomSlider';
+import { BlurView } from '@react-native-community/blur';
 
-// Get device dimensions for styling
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
+// This creates a 30px margin on left and right
+const CONTENT_WIDTH = width - 60; 
 
-// This is just a placeholder prop for now. 
-// It will be used to close the screen (trigger the "swipe down" animation)
 type NowPlayingScreenProps = {
   onClose: () => void;
 };
 
 const NowPlayingScreen: React.FC<NowPlayingScreenProps> = ({ onClose }) => {
-  // Get all the data and controls directly from the context
   const { 
     currentTrack, 
     isPlaying, 
-    isBuffering, 
     togglePlayback, 
     playNextTrack, 
     playPreviousTrack 
   } = usePlayerContext();
 
-  // If there's no track, we shouldn't be on this screen.
   if (!currentTrack) {
-    // In a real scenario, this screen would be hidden,
-    // but this is a good safeguard.
     return null;
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* 1. Header (with Close Button) */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-          <Ionicons name="chevron-down" size={30} color="white" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle} numberOfLines={1}>
-          Playing From: {currentTrack.artist} 
-        </Text>
-        <TouchableOpacity style={styles.closeButton} /* Extra space */>
-           <Ionicons name="ellipsis-vertical" size={24} color="white" />
-        </TouchableOpacity>
-      </View>
+    <ImageBackground 
+        source={{ uri: encodeURI(currentTrack.artwork) }}
+        style={styles.container}
+        blurRadius={Platform.OS === 'android' ? 10 : 0} 
+    >
+      <BlurView
+        style={styles.absoluteFill}
+        blurType="dark" 
+        blurAmount={30} 
+        reducedTransparencyFallbackColor="black"
+      />
 
-      {/* 2. Album Art (Large) */}
-      <View style={styles.artworkContainer}>
-        <Image 
-          source={{ uri: encodeURI(currentTrack.artwork) }}
-          style={styles.artwork}
-        />
-      </View>
+      <SafeAreaView style={styles.contentContainer}>
+        
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+            <Ionicons name="chevron-down" size={30} color="white" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle} numberOfLines={1}>
+            Playing From: {currentTrack.artist} 
+          </Text>
+          <TouchableOpacity style={styles.closeButton}>
+             <Ionicons name="ellipsis-vertical" size={24} color="white" />
+          </TouchableOpacity>
+        </View>
 
-      {/* 3. Track Info */}
-      <View style={styles.trackInfoContainer}>
-        <Text style={styles.title} numberOfLines={2}>{currentTrack.title}</Text>
-        <Text style={styles.artist} numberOfLines={1}>{currentTrack.artist}</Text>
-      </View>
-
-      {/* 4. Slider */}
-      <View style={styles.sliderContainer}>
-        <CustomSlider />
-      </View>
-
-      {/* 5. Controls */}
-      <View style={styles.controlsContainer}>
-        <TouchableOpacity onPress={playPreviousTrack} style={styles.controlButton}>
-          <Ionicons name="play-skip-back" size={40} color="white" />
-        </TouchableOpacity>
-
-        <TouchableOpacity onPress={togglePlayback} style={styles.playPauseButton}>
-          <Ionicons 
-            name={isPlaying ? 'pause-circle' : 'play-circle'} 
-            size={70} // Larger main button
-            color="white" 
+        {/* Album Art */}
+        <View style={styles.artworkContainer}>
+          <Image 
+            source={{ uri: encodeURI(currentTrack.artwork) }}
+            style={styles.artwork}
           />
-        </TouchableOpacity>
+        </View>
 
-        <TouchableOpacity onPress={playNextTrack} style={styles.controlButton}>
-          <Ionicons name="play-skip-forward" size={40} color="white" />
-        </TouchableOpacity>
-      </View>
-    </SafeAreaView>
+        {/* Track Info */}
+        <View style={styles.trackInfoContainer}>
+          <Text style={styles.title} numberOfLines={2}>{currentTrack.title}</Text>
+          <Text style={styles.artist} numberOfLines={1}>{currentTrack.artist}</Text>
+        </View>
+
+        {/* Slider - STRICT WIDTH APPLIED HERE */}
+        <View style={styles.sliderContainer}>
+          <CustomSlider />
+        </View>
+
+        {/* Controls */}
+        <View style={styles.controlsContainer}>
+          <TouchableOpacity onPress={playPreviousTrack}>
+            <Ionicons name="play-skip-back" size={40} color="white" />
+          </TouchableOpacity>
+
+          <TouchableOpacity onPress={togglePlayback}>
+            <Ionicons 
+              name={isPlaying ? 'pause-circle' : 'play-circle'} 
+              size={80} 
+              color="white" 
+            />
+          </TouchableOpacity>
+
+          <TouchableOpacity onPress={playNextTrack}>
+            <Ionicons name="play-skip-forward" size={40} color="white" />
+          </TouchableOpacity>
+        </View>
+
+      </SafeAreaView>
+    </ImageBackground>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#121212', // Same as home
+  },
+  absoluteFill: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 0,
+  },
+  contentContainer: {
+    flex: 1,
     alignItems: 'center',
+    zIndex: 1,
+    backgroundColor: 'rgba(0,0,0,0.2)', 
   },
   header: {
     width: '100%',
@@ -110,7 +130,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   closeButton: {
-    padding: 5, // Make tap target bigger
+    padding: 5,
   },
   headerTitle: {
     flex: 1,
@@ -118,53 +138,54 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 14,
     fontWeight: 'bold',
+    textTransform: 'uppercase',
+    opacity: 0.7,
   },
   artworkContainer: {
-    width: width - 40, // Square artwork, 20px padding on each side
-    height: width - 40,
-    marginTop: 30, // Space from header
+    width: CONTENT_WIDTH, // Strictly calculated
+    height: CONTENT_WIDTH, // Square
+    marginTop: 40,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.5,
-    shadowRadius: 10,
-    elevation: 10,
+    shadowOffset: { width: 0, height: 20 },
+    shadowOpacity: 0.6,
+    shadowRadius: 20,
+    elevation: 20,
   },
   artwork: {
     width: '100%',
     height: '100%',
-    borderRadius: 12,
+    borderRadius: 20,
   },
   trackInfoContainer: {
     width: '100%',
     alignItems: 'center',
-    marginTop: 40,
+    marginTop: 50,
     paddingHorizontal: 40,
   },
   title: {
     color: 'white',
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: 'bold',
     textAlign: 'center',
+    marginBottom: 5,
   },
   artist: {
-    color: '#B3B3B3',
+    color: '#rgba(255,255,255,0.7)',
     fontSize: 18,
-    marginTop: 5,
+    fontWeight: '500',
   },
   sliderContainer: {
-    width: '100%',
-    marginTop: 30,
-    // We reuse CustomSlider, which has its own padding/height
+    width: CONTENT_WIDTH, // EXACTLY THE SAME AS ARTWORK
+    marginTop: 40,
+    // No padding needed here, the CustomSlider handles its own internal layout
   },
   controlsContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-around', // Distribute controls
-    width: '80%', // Not full width
-    marginTop: 30,
+    justifyContent: 'space-between',
+    width: '70%',
+    marginTop: 20,
   },
-  controlButton: {},
-  playPauseButton: {},
 });
 
 export default NowPlayingScreen;

@@ -1,57 +1,68 @@
-// Lipur_ui/src/components/MiniPlayer.tsx
-
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
-import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Pressable, Dimensions } from 'react-native';
 import { usePlayerContext } from '../contexts/PlayerContext';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import PlaybackSlider from './PlaybackSlider';
+import { BlurView } from '@react-native-community/blur';
 import CustomSlider from './CustomSlider';
-const Icon = Ionicons as unknown as React.ComponentClass<any, any>;
 
+const BAR_HEIGHT = 60;   
+const PROGRESS_HEIGHT = 60; // Very thin, sleek progress bar
+const TOTAL_PLAYER_HEIGHT = BAR_HEIGHT + PROGRESS_HEIGHT; 
 
-const SLIDER_HEIGHT = 70; // Approx height needed for slider container (20px slider + padding)
-const BAR_HEIGHT = 60;   // Height of the controls/text bar
-const TOTAL_PLAYER_HEIGHT = SLIDER_HEIGHT + BAR_HEIGHT; // 100px total
+interface MiniPlayerProps {
+  onPress?: () => void;
+}
 
-const MiniPlayer: React.FC = () => {
-  const { currentTrack, isPlaying, isBuffering, togglePlayback, playNextTrack, playPreviousTrack } = usePlayerContext();
+const MiniPlayer: React.FC<MiniPlayerProps> = ({ onPress }) => {
+  const { currentTrack, isPlaying, isBuffering, togglePlayback, playNextTrack, playPreviousTrack, position, duration } = usePlayerContext();
   
   if (!currentTrack) return null;
 
+  // Calculate progress percentage for the simple bar
+  const progressPercent = duration > 0 ? (position / duration) * 100 : 0;
+
   return (
     <View style={styles.playerContainer}>
-      {/* SLIDER CONTAINER - Fixed positioning */}
-      <View style={styles.sliderContainer}>
-        {/* <PlaybackSlider /> */}
-        <CustomSlider />
-      </View>
-      
-      {/* CONTROLS BAR */}
-      <View style={styles.miniPlayerBar}>
-        <View style={styles.textContainer}>
-          <Text style={styles.title} numberOfLines={1}>{currentTrack.title}</Text>
-          <Text style={styles.artist} numberOfLines={1}>{currentTrack.artist}</Text>
+      <BlurView
+        style={styles.blurBackground}
+        blurType="dark"
+        blurAmount={15} 
+      />
+
+      <Pressable onPress={onPress} style={{ flex: 1 }}>
+        
+        {/* 1. NEW: Simple Progress Bar (Replaces CustomSlider) */}
+
+        
+        <View style={styles.progressBarContainer}>
+          <CustomSlider/>        
         </View>
         
-        <View style={styles.controls}>
-          <TouchableOpacity onPress={playPreviousTrack} style={styles.controlButton}>
-            <Ionicons name="play-skip-back" size={30} color="white" />
-          </TouchableOpacity>
-
-          {isBuffering ? (
-            <ActivityIndicator size="small" color="#FFF" />
-          ) : (
-            <TouchableOpacity onPress={togglePlayback} style={styles.playPauseButton}>
-              <Ionicons name={isPlaying ? 'pause-circle' : 'play-circle'} size={40} color="white" />
+        <View style={styles.miniPlayerBar}>
+          <View style={styles.textContainer}>
+            <Text style={styles.title} numberOfLines={1}>{currentTrack.title}</Text>
+            <Text style={styles.artist} numberOfLines={1}>{currentTrack.artist}</Text>
+          </View>
+          
+          <View style={styles.controls}>
+            <TouchableOpacity onPress={playPreviousTrack} style={styles.controlButton}>
+              <Ionicons name="play-skip-back" size={28} color="white" />
             </TouchableOpacity>
-          )}
 
-          <TouchableOpacity onPress={playNextTrack} style={styles.controlButton}>
-            <Ionicons name="play-skip-forward" size={30} color="white" />
-          </TouchableOpacity>
+            {isBuffering ? (
+              <ActivityIndicator size="small" color="#FFF" style={{ marginHorizontal: 10 }} />
+            ) : (
+              <TouchableOpacity onPress={togglePlayback} style={styles.playPauseButton}>
+                <Ionicons name={isPlaying ? 'pause' : 'play'} size={32} color="white" />
+              </TouchableOpacity>
+            )}
+
+            <TouchableOpacity onPress={playNextTrack} style={styles.controlButton}>
+              <Ionicons name="play-skip-forward" size={28} color="white" />
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
+      </Pressable>
     </View>
   );
 };
@@ -59,23 +70,32 @@ const MiniPlayer: React.FC = () => {
 const styles = StyleSheet.create({
   playerContainer: { 
     position: 'absolute',
-    bottom: 65,  // Above TabBar
-    left: 0,
-    right: 0,
-    height: TOTAL_PLAYER_HEIGHT, // 100px
+    bottom: 65, // Above TabBar
+    left: 8,     // Margin from left
+    right: 8,    // Margin from right
+    height: TOTAL_PLAYER_HEIGHT,
     zIndex: 1000,
-    // pointerEvents: 'auto',
+    borderRadius: 12,
+    overflow: 'hidden',
+    backgroundColor: 'rgba(30,30,30,0.6)', // Fallback if blur fails
   },
-  sliderContainer: {
-    height: SLIDER_HEIGHT, // 40px
-    backgroundColor: '#303030',
-    width:'100%',
-    // **CRITICAL FIX**: Allow touch events
-    // pointerEvents: 'auto',
+  blurBackground: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: -1,
+  },
+  // 2. NEW STYLES for the simple progress bar
+  progressBarContainer: {
+    width: '80%',
+    marginHorizontal: '10%',
+    justifyContent: 'center',
+   // Faint track
+  },
+  progressBarFill: {
+    height: '100%',
+    backgroundColor: '#1DB954', // Spotify Green
   },
   miniPlayerBar: {
-    height: BAR_HEIGHT, // 60px
-    backgroundColor: '#303030',
+    height: BAR_HEIGHT,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 15,
@@ -85,14 +105,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginRight: 10,
   },
-  title: { color: 'white', fontSize: 14, fontWeight: 'bold' },
+  title: { color: 'white', fontSize: 14, fontWeight: '600' },
   artist: { color: '#B3B3B3', fontSize: 12 },
   controls: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  controlButton: { marginHorizontal: 8 },
-  playPauseButton: { marginHorizontal: 10 },
+  controlButton: { marginHorizontal: 5 },
+  playPauseButton: { marginHorizontal: 8 },
 });
 
 export default MiniPlayer;

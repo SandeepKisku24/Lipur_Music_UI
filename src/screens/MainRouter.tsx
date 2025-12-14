@@ -1,23 +1,20 @@
-import React, { useState, useRef, useMemo } from 'react'; // 1. Import useRef and useMemo
+import React, { useState, useRef, useMemo } from 'react';
 import { 
     View, 
     StyleSheet, 
     StatusBar,
-    TouchableOpacity // We still use this, but it's simpler now
 } from 'react-native';
 import TabBar from '../components/TabBar';
 import MiniPlayer from '../components/MiniPlayer';
 import NowPlayingScreen from './NowPlayingScreen';
 
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import { runOnJS } from 'react-native-reanimated'; // To call our 'open' function
+import { runOnJS } from 'react-native-reanimated';
 
-// --- 2. NEW IMPORTS ---
 import {
   BottomSheetModal,
-  BottomSheetModalProvider,
 } from '@gorhom/bottom-sheet';
-import { usePlayerContext } from '../contexts/PlayerContext'; // We need this to hide the MiniPlayer
+import { usePlayerContext } from '../contexts/PlayerContext';
 
 // Screens
 import HomeScreen from './Homescreen.tsx';
@@ -28,26 +25,18 @@ import ProfileScreen from './ProfileScreen.tsx';
 const MainRouter: React.FC = () => {
     const [activeTab, setActiveTab] = useState('Home');
     
-    // 4. ADD a ref for the BottomSheet
     const bottomSheetModalRef = useRef<BottomSheetModal>(null);
-
-    // 5. DEFINE the "snap points" for the player
-    // This tells the sheet its heights
-    const snapPoints = useMemo(() => ['100%'], []); // Only one snap point: 100% (full screen)
-
-    // 6. GET the current track to know if the MiniPlayer should be visible
+    const snapPoints = useMemo(() => ['100%'], []);
     const { currentTrack } = usePlayerContext();
 
-    // 7. Functions to control the new BottomSheet
     const openNowPlaying = () => {
-        bottomSheetModalRef.current?.present(); // This opens the sheet
+        bottomSheetModalRef.current?.present();
     };
     const closeNowPlaying = () => {
-        bottomSheetModalRef.current?.dismiss(); // This closes it
+        bottomSheetModalRef.current?.dismiss();
     };
 
     const renderScreen = () => {
-        // ... (This code stays exactly the same)
         switch (activeTab) {
             case 'Search':
                 return <SearchScreen />;
@@ -61,21 +50,15 @@ const MainRouter: React.FC = () => {
         }
     };
 
-    const tapGesture = Gesture.Tap()
-        .onEnd(() => {
-            // We must use runOnJS because 'openNowPlaying' is a JS function,
-            // and this gesture code runs on the native UI thread.
-            runOnJS(openNowPlaying)();
-        });
+    // 1. REMOVE TapGesture. We only want gestures for SWIPING up.
+    //    Clicking is now handled by the MiniPlayer itself.
     const panGesture = Gesture.Pan()
         .onUpdate((event) => {
-            // Check if the swipe is primarily upwards (negative translationY)
-            if (event.translationY < -10) { // If swiped up by 10 pixels
+            if (event.translationY < -10) { 
                 runOnJS(openNowPlaying)();
             }
         })
-        .activeOffsetY([-10, 100]); // Only activate if swipe starts vertically
-    const combinedGesture = Gesture.Race(panGesture, tapGesture);
+        .activeOffsetY([-10, 100]); 
 
     return (
         <View style={styles.container}>
@@ -85,27 +68,24 @@ const MainRouter: React.FC = () => {
                 {renderScreen()}
             </View>
 
-            {/* 8. Show the MiniPlayer ONLY if a track is playing */}
             {currentTrack && (
-                <GestureDetector gesture={combinedGesture}>
-                    {/* The <MiniPlayer /> is now gesture-controlled */}
-                    <MiniPlayer /> 
+                // 2. Just use panGesture (no Race)
+                <GestureDetector gesture={panGesture}>
+                    {/* 3. Pass the onPress prop to MiniPlayer */}
+                    <MiniPlayer onPress={openNowPlaying} /> 
                 </GestureDetector>
             )}
             
             <TabBar activeTab={activeTab} setTab={setActiveTab} />
 
-            {/* 9. REPLACE the <Modal> with <BottomSheetModal> */}
             <BottomSheetModal
                 ref={bottomSheetModalRef}
-                index={0} // The first snap point in the array (which is '100%')
+                index={0}
                 snapPoints={snapPoints}
-                // These props make it look like a full-screen modal
                 stackBehavior="replace" 
-                handleComponent={() => null} // Hides the little grab-bar
+                handleComponent={() => null} 
                 backgroundStyle={{ backgroundColor: '#121212' }}
             >
-                {/* The content of the sheet is our NowPlayingScreen */}
                 <NowPlayingScreen onClose={closeNowPlaying} />
             </BottomSheetModal>
         </View>

@@ -45,7 +45,7 @@ export async function fetchSongs(): Promise<Track[]> {
           playCount: song.playCount || 0,
           duration: song.duration || 0,
           artwork: cleanCoverUrl,
-          
+          totalPlayTime: song.totalPlayTime || 0,
           // 🔹 FIX 2: Map the new fields
           genre: song.genre || 'Unknown',
           createdYear: song.createdYear || 'N/A',
@@ -130,6 +130,21 @@ export async function fetchSongsByArtist(artistId: string): Promise<Track[]> {
         
     } catch (error) {
         console.error('Failed to fetch artist songs:', error);
+        return [];
+    }
+}
+
+export async function fetchListeningHistory(userId: string): Promise<string[]> {
+    try {
+        // We use query param for GET request
+        const response = await fetch(`${API_BASE_URL}/analytics/history?userId=${userId}`);
+        if (!response.ok) return [];
+        
+        const data = await response.json();
+        // Return just the array of songIds
+        return data.history.map((item: any) => item.songId);
+    } catch (error) {
+        console.error('Failed to fetch history:', error);
         return [];
     }
 }

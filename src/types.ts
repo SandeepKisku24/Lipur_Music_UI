@@ -17,6 +17,7 @@ export interface SongApiData {
   playCount: number;
   title: string;
   uploadedAt: number;
+  totalPlayTime: number;
   
   // 🔹 FIX 2: Changed 'number' to 'string' to match backend
   createdYear: string; 
@@ -33,8 +34,9 @@ export interface Track {
   artistIds: string[];
   artwork: string; // Maps to coverUrl
   likes: number; // Optional likes property
-  playCount: number; // Optional playCount property
+  playCount: number; //  playCount property
   duration: number; // Optional duration property
   genre: string;
   createdYear: string;
+  totalPlayTime?: number;
 }

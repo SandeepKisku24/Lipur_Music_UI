@@ -59,8 +59,8 @@ const SearchScreen: React.FC = () => {
     const [loadingSongs, setLoadingSongs] = useState(false);
 
     // Placeholder data for initial screen (UX boost)
-    const recentSearches = ['Pop Hits', '90s Rock', 'Dhani Marandi'];
-    const trendingGenres = ['Hip Hop', 'Instrumental', 'Workout'];
+    const recentSearches = ['Stephan Tudu', 'Classic', 'Dhani Marandi'];
+    const trendingGenres = ['Pop', 'Christian', 'Folk'];
 
     // 🚀 Universal Click Handler: Decides whether to Play or Navigate
     const handleResultPress = async (item: SearchResult) => {
