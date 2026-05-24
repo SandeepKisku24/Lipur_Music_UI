@@ -5,7 +5,11 @@ import { PlayerProvider } from './src/contexts/PlayerContext.tsx';
 import { AuthProvider, useAuth } from './src/contexts/AuthContext.tsx'; // NEW
 import MainRouter from './src/screens/MainRouter.tsx';
 import LoginScreen from './src/screens/LoginScreen.tsx'; 
+import { ThemeProvider } from './src/contexts/ThemeContext';
 import { ActivityIndicator, View } from 'react-native';
+import { Provider as PaperProvider } from 'react-native-paper';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 
 // Top-level component to decide which router to render
 const RootNavigation = () => {
@@ -25,11 +29,19 @@ const RootNavigation = () => {
 
 const App = () => {
   return (
+    <SafeAreaProvider>
+    <PaperProvider>
+      <ThemeProvider>
     <AuthProvider>
       <PlayerProvider> 
-        <RootNavigation />
+        <BottomSheetModalProvider>
+          <RootNavigation />
+        </BottomSheetModalProvider>
       </PlayerProvider>
     </AuthProvider>
+    </ThemeProvider>
+    </PaperProvider>
+    </SafeAreaProvider>
   );
 };
 

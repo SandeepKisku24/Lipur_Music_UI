@@ -16,16 +16,34 @@ interface UploadScreenProps {
 // as it correctly includes the nullable properties (name: string | null).
 const UploadScreen: React.FC<UploadScreenProps> = ({ onClose }) => {
     const [file, setFile] = useState<Dp.DocumentPickerResponse | null>(null);
+    const [artistNames, setArtistNames] = useState(['']);
     const [metadata, setMetadata] = useState<UploadMetadata>({
         title: '',
-        artist: '',
         genre: 'Pop',
         coverUrl: '',
         createdYear: new Date().getFullYear().toString(),
         upload_user: 'admin', 
-        artistId: '', // Ensure all properties are initialized
+        artists: [],    // Array of artist names
+        artistIds: []// Ensure all properties are initialized
     });
     const [loading, setLoading] = useState(false);
+
+    const handleArtistChange = (text: string, index: number) => {
+        const newArtists = [...artistNames];
+        newArtists[index] = text;
+        setArtistNames(newArtists);
+    };
+
+    const handleAddArtist = () => {
+        setArtistNames([...artistNames, '']); // Add a new empty input field
+    };
+
+    const handleRemoveArtist = (index: number) => {
+        if (artistNames.length > 1) {
+            const newArtists = artistNames.filter((_, i) => i !== index);
+            setArtistNames(newArtists);
+        }
+    };
 
     const handleFilePick = async () => {
         try {
@@ -52,10 +70,21 @@ const UploadScreen: React.FC<UploadScreenProps> = ({ onClose }) => {
     };
 
     const handleSubmit = async () => {
-        if (!file || !metadata.title || !metadata.artist) {
-            Alert.alert("Missing Info", "Please select a file and provide Title/Artist.");
+        // console.log("artistNames:", artistNames);
+        const validArtists = artistNames.map(name => name.trim()).filter(name => name.length > 0);
+        console.log("Valid artists for upload:", validArtists);
+        console.log("size of valid artists:", validArtists.length);
+        if (!file || !metadata.title || validArtists.length === 0) {
+            Alert.alert("Missing Info", "Please select a file, Title, and at least one Artist.");
             return;
         }
+
+        const finalMetadata: UploadMetadata = {
+        ...metadata,
+            artists: validArtists,
+            artistIds: []// Dummy IDs for now
+        };
+        console.log("Final metadata for upload:", finalMetadata);
 
         // --- TYPE CONVERSION AND NULL CHECKING FOR API CALL ---
         const apiFile: DocumentPickerResponse = {
@@ -69,7 +98,7 @@ const UploadScreen: React.FC<UploadScreenProps> = ({ onClose }) => {
 
         setLoading(true);
         try {
-            const response = await uploadSong(apiFile, metadata); 
+            const response = await uploadSong(apiFile, finalMetadata); 
             Alert.alert("Success!", `File uploaded: ${response.filename}`);
             onClose();
         } catch (error: any) {
@@ -112,14 +141,30 @@ const UploadScreen: React.FC<UploadScreenProps> = ({ onClose }) => {
                     placeholderTextColor="#666"
                 />
                 
-                <Text style={styles.label}>Artist*</Text>
-                <TextInput
-                    style={styles.input}
-                    value={metadata.artist}
-                    onChangeText={(text) => setMetadata(p => ({ ...p, artist: text }))}
-                    placeholder="Artist Name"
-                    placeholderTextColor="#666"
-                />
+                <Text style={styles.label}>Artists*</Text>
+                {artistNames.map((artist, index) => (
+                    <View key={index} style={styles.artistInputRow}>
+                        <TextInput
+                            style={[styles.input, { flex: 1, marginBottom: 0 }]}
+                            value={artist}
+                            onChangeText={(text) => handleArtistChange(text, index)}
+                            placeholder="Artist Name"
+                            placeholderTextColor="#666"
+                        />
+                        {artistNames.length > 1 && (
+                            <TouchableOpacity 
+                                style={styles.removeButton}
+                                onPress={() => handleRemoveArtist(index)}
+                            >
+                                <Text style={styles.removeText}>—</Text>
+                            </TouchableOpacity>
+                        )}
+                    </View>
+                ))}
+                
+                <TouchableOpacity onPress={handleAddArtist} style={styles.addButton}>
+                    <Text style={styles.addText}>+ Add Another Artist</Text>
+                </TouchableOpacity>
                 
                 <Text style={styles.label}>Cover Image URL</Text>
                 <TextInput
@@ -162,12 +207,23 @@ const UploadScreen: React.FC<UploadScreenProps> = ({ onClose }) => {
             
             {/* Submit Button */}
             <TouchableOpacity 
-                style={[styles.submitButton, loading && styles.submitDisabled]} 
-                onPress={handleSubmit} 
-                disabled={loading || !file || !metadata.title || !metadata.artist}
-            >
-                {loading ? <ActivityIndicator color="white" /> : <Text style={styles.submitText}>Upload Song</Text>}
+            style={[
+                styles.submitButton,
+                (!file || !metadata.title || artistNames.map(n => n.trim()).filter(n => n.length > 0).length === 0 || loading)
+                ? styles.submitDisabled
+                : styles.submitActive
+            ]} 
+            onPress={handleSubmit} 
+            disabled={
+                loading || 
+                !file || 
+                !metadata.title || 
+                artistNames.map(n => n.trim()).filter(n => n.length > 0).length === 0
+            }
+            >   
+            {loading ? <ActivityIndicator color="white" /> : <Text style={styles.submitText}>Upload Song</Text>}
             </TouchableOpacity>
+
             </ScrollView>
         </SafeAreaView>
     );
@@ -237,17 +293,56 @@ const styles = StyleSheet.create({
         fontSize: 16,
         marginBottom: 10,
     },
-    submitButton: {
-        backgroundColor: '#1DB954',
-        padding: 15,
-        borderRadius: 50,
+
+    artistInputRow: { // NEW
+        flexDirection: 'row',
         alignItems: 'center',
-        marginTop: 20,
+        marginBottom: 10,
+    },
+    removeButton: { // NEW
+        marginLeft: 10,
+        backgroundColor: '#cc3333',
+        width: 30,
+        height: 30,
+        borderRadius: 15,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    removeText: { // NEW
+        color: 'white',
+        fontSize: 18,
+        lineHeight: 18,
+    },
+    addButton: { // NEW
+        paddingVertical: 8,
         marginBottom: 20,
     },
-    submitDisabled: {
-        backgroundColor: '#156b35',
+    addText: { // NEW
+        color: '#1DB954',
+        fontSize: 16,
+        fontWeight: 'bold',
     },
+    submitButton: {
+    padding: 15,
+    borderRadius: 50,
+    alignItems: 'center',
+    marginTop: 20,
+    marginBottom: 20,
+},
+
+submitActive: {
+    backgroundColor: '#1DB954', // Bright green when active
+    shadowColor: '#1DB954',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.5,
+    shadowRadius: 4,
+    elevation: 5,
+},
+
+submitDisabled: {
+    backgroundColor: '#555', // Greyed-out when inactive
+    opacity: 0.6,
+},
     submitText: {
         color: 'white',
         fontSize: 18,

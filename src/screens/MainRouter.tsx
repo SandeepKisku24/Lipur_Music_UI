@@ -1,19 +1,35 @@
 // Lipur_ui/src/screens/MainRouter.tsx
-
-import React, { useState } from 'react';
-import { View, StyleSheet, StatusBar } from 'react-native';
+import React, { useState, useRef, useMemo } from 'react';
+import { 
+    View, 
+    StyleSheet, 
+    StatusBar,
+} from 'react-native';
 import TabBar from '../components/TabBar';
 import MiniPlayer from '../components/MiniPlayer';
+import NowPlayingScreen from './NowPlayingScreen';
+import { BottomSheetModal } from '@gorhom/bottom-sheet';
+import { usePlayerContext } from '../contexts/PlayerContext';
 
 // Screens
 import HomeScreen from './Homescreen.tsx';
-import SearchScreen from './SearchScreen.tsx'// Use your placeholders
-import LibraryScreen from './LibraryScreen.tsx'// Use your placeholders
-import ProfileScreen from './ProfileScreen.tsx'; // Use your placeholders
+import SearchScreen from './SearchScreen.tsx';
+import LibraryScreen from './LibraryScreen.tsx';
+import ProfileScreen from './ProfileScreen.tsx';
 
 const MainRouter: React.FC = () => {
-    // State to track the active tab
     const [activeTab, setActiveTab] = useState('Home');
+    
+    const bottomSheetModalRef = useRef<BottomSheetModal>(null);
+    const snapPoints = useMemo(() => ['100%'], []);
+    const { currentTrack } = usePlayerContext();
+
+    const openNowPlaying = () => {
+        bottomSheetModalRef.current?.present();
+    };
+    const closeNowPlaying = () => {
+        bottomSheetModalRef.current?.dismiss();
+    };
 
     const renderScreen = () => {
         switch (activeTab) {
@@ -33,16 +49,27 @@ const MainRouter: React.FC = () => {
         <View style={styles.container}>
             <StatusBar barStyle="light-content" backgroundColor="#121212" />
             
-            {/* 1. Main Content Area */}
             <View style={styles.content}>
                 {renderScreen()}
             </View>
 
-            {/* 2. MiniPlayer (Sits on top of content and tab bar) */}
-            <MiniPlayer /> 
+            {currentTrack && (
+                /* 🔹 FIXED: Removed global GestureDetector wrapping to stop hit-test hijacking */
+                <MiniPlayer onPress={openNowPlaying} /> 
+            )}
             
-            {/* 3. Custom Tab Bar (Sits at the bottom) */}
             <TabBar activeTab={activeTab} setTab={setActiveTab} />
+
+            <BottomSheetModal
+                ref={bottomSheetModalRef}
+                index={0}
+                snapPoints={snapPoints}
+                stackBehavior="replace" 
+                handleComponent={() => null} 
+                backgroundStyle={{ backgroundColor: '#121212' }}
+            >
+                <NowPlayingScreen onClose={closeNowPlaying} />
+            </BottomSheetModal>
         </View>
     );
 };
@@ -52,7 +79,6 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#121212',
     },
-    // The content needs to be flex-1 so it pushes the TabBar to the bottom
     content: {
         flex: 1,
     }
