@@ -11,11 +11,15 @@ import { Track } from '../types';
 import { getStreamingUrl } from '../api';
 import axios from 'axios';
 import auth from '@react-native-firebase/auth'; // Assuming you use RN Firebase for auth
+import { getLocalTrackUri } from '../services/downloadService';
+import ReactNativeBlobUtil from 'react-native-blob-util';
 
 // --- CONFIGURATION ---
 // const API_BASE_URL = 'https://lipur-backend.onrender.com';
-const API_BASE_URL_FIX  ='http://10.0.2.2:8080/analytics/listen';
-const API_BASE_URL ='http://10.0.2.2:8080';
+// const API_BASE_URL_FIX  ='http://10.0.2.2:8080/analytics/listen';
+// const API_BASE_URL ='http://10.0.2.2:8080';
+const API_BASE_URL_FIX  ='https://lipur-backend.onrender.com/analytics/listen';
+const API_BASE_URL ='https://lipur-backend.onrender.com';
 
 
 // Helper to get the current user's token
@@ -101,7 +105,7 @@ export const useTrackPlayer = () => {
   
   const cleanupMalformedUrl = (malformedUrl: string, originalTrackUrl: string): string => {
     const authIndex = malformedUrl.indexOf('?Authorization=');
-    if (authIndex === -1) return originalTrackUrl;
+    if (authIndex === -1) return malformedUrl; // 🔹 FIX: Return the parsed signed url safely instead of forcing fallback
     const authPart = malformedUrl.substring(authIndex);
     const baseUrlMatch = originalTrackUrl.match(/https:\/\/f005\.backblazeb2\.com\/file\/LipurMusic\//);
     if (!baseUrlMatch) return originalTrackUrl;
@@ -153,8 +157,22 @@ export const useTrackPlayer = () => {
         currentIndex: trackIndex >= 0 ? trackIndex : prev.currentIndex,
       }));
 
-      const signedUrl = await getStreamingUrl(track.url);
-      const cleanedUrl = cleanupMalformedUrl(signedUrl, track.url);
+      const localCachedUri = await getLocalTrackUri(track.id);
+let finalPlayerUrl = '';
+
+if (localCachedUri) {
+  const filename = localCachedUri.split('/').pop();
+  
+  // 🔹 Bulletproof dynamic resolution for every device in the world:
+  finalPlayerUrl = `file://${ReactNativeBlobUtil.fs.dirs.DocumentDir}/downloads/${filename}`;
+  
+  console.log(`🎯 Active Runtime Source Path Mounted: ${finalPlayerUrl}`);
+} else {
+  const signedUrl = await getStreamingUrl(track.url);
+  finalPlayerUrl = cleanupMalformedUrl(signedUrl, track.url);
+}
+      
+      const cleanedUrl = cleanupMalformedUrl(finalPlayerUrl, track.url);
       const trackForPlayer = { ...track, url: cleanedUrl };
 
       await TrackPlayer.reset();

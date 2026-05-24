@@ -1,12 +1,10 @@
 // Lipur_ui/src/api.ts
-
+import auth from '@react-native-firebase/auth'; // 🔹 FIXED: Added missing Firebase Auth import definition
 import { SongApiData, Track } from './types';
 import { API_ENDPOINT } from '@env';
 
-const API_URL = 'http://10.0.2.2:8080/songs';
-const API_BASE_URL = 'http://10.0.2.2:8080';
-// const API_URL = 'https://lipur-backend.onrender.com/songs';
-// const API_BASE_URL = 'https://lipur-backend.onrender.com';
+const API_URL = 'https://lipur-backend.onrender.com/songs';
+const API_BASE_URL = 'https://lipur-backend.onrender.com';
 
 export async function fetchSongs(): Promise<Track[]> {
   try {
@@ -21,12 +19,10 @@ export async function fetchSongs(): Promise<Track[]> {
     const tracks: Track[] = data.songs.map(song => {
         const cleanCoverUrl = song.coverUrl.split('?')[0];
         
-        // Use a safe fallback for names
         const namesArray = Array.isArray(song.artistNames) 
             ? song.artistNames 
             : ['Unknown Artist'];
         
-        // Use a safe fallback for IDs
         const idsArray = Array.isArray(song.artistIds)
             ? song.artistIds
             : [];
@@ -35,18 +31,14 @@ export async function fetchSongs(): Promise<Track[]> {
           id: song.id,
           url: song.fileUrl,
           title: song.title,
-          artist: namesArray.join(', '), // Comma-separated string
+          artist: namesArray.join(', '), 
           artistNames: namesArray,
-          
-          // 🔹 FIX 1: Map from 'song.artistIds' (plural)
           artistIds: idsArray, 
-          
           likes: song.likes || 0,
           playCount: song.playCount || 0,
           duration: song.duration || 0,
           artwork: cleanCoverUrl,
           totalPlayTime: song.totalPlayTime || 0,
-          // 🔹 FIX 2: Map the new fields
           genre: song.genre || 'Unknown',
           createdYear: song.createdYear || 'N/A',
         };
@@ -61,7 +53,6 @@ export async function fetchSongs(): Promise<Track[]> {
 }
 
 export async function getStreamingUrl(restrictedFileUrl: string): Promise<string> {
-    // ... (This function is correct and needs no changes) ...
     const queryString = new URLSearchParams({ file: restrictedFileUrl }).toString();
     const STREAM_URL = `${API_BASE_URL}/stream-url?${queryString}`;
     
@@ -80,68 +71,41 @@ export async function getStreamingUrl(restrictedFileUrl: string): Promise<string
     }
 }
 
-export async function fetchSongsByArtist(artistId: string): Promise<Track[]> {
-    const ARTIST_SONGS_URL = `${API_BASE_URL}/songs-by-artist?artistId=${artistId}`;
-    
-    try {
-        const response = await fetch(ARTIST_SONGS_URL);
-        console.log(`Fetching songs for artist ID: ${artistId}`);
-
-        if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}`);
-        }
-        
-        const data: { songs: SongApiData[] } = await response.json();
-
-        const tracks: Track[] = data.songs.map(song => {
-            const cleanCoverUrl = song.coverUrl.split('?')[0];
-            
-            const namesArray = Array.isArray(song.artistNames) 
-                ? song.artistNames 
-                : ['Unknown Artist'];
-            
-            const idsArray = Array.isArray(song.artistIds)
-                ? song.artistIds
-                : [];
-                
-            return {
-                id: song.id,
-                url: song.fileUrl,
-                title: song.title,
-                artist: namesArray.join(', '),
-                artistNames: namesArray,
-                
-                // 🔹 FIX 3: Correctly map 'song.artistIds'
-                artistIds: idsArray, 
-                
-                likes: song.likes || 0,
-                genre: song.genre || 'Unknown',
-                
-                // 🔹 FIX 4: Map 'song.createdYear' (string to string)
-                createdYear: song.createdYear || 'N/A', 
-                
-                playCount: song.playCount || 0,
-                duration: song.duration || 0,
-                artwork: cleanCoverUrl,
-            };
-        });
-        
-        return tracks;
-        
-    } catch (error) {
-        console.error('Failed to fetch artist songs:', error);
-        return [];
+export const fetchSongsByArtist = async (artistId: string): Promise<any[]> => {
+  try {
+    const currentUser = auth().currentUser;
+    if (!currentUser) {
+      throw new Error("No authenticated session found.");
     }
-}
+    
+    const token = await currentUser.getIdToken();
+
+    const response = await fetch(`https://lipur-backend.onrender.com/songs-by-artist?artistId=${artistId}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.songs || data; 
+  } catch (error) {
+    console.error(`Error inside fetchSongsByArtist utility layer:`, error);
+    throw error;
+  }
+};
 
 export async function fetchListeningHistory(userId: string): Promise<string[]> {
     try {
-        // We use query param for GET request
         const response = await fetch(`${API_BASE_URL}/analytics/history?userId=${userId}`);
         if (!response.ok) return [];
         
         const data = await response.json();
-        // Return just the array of songIds
         return data.history.map((item: any) => item.songId);
     } catch (error) {
         console.error('Failed to fetch history:', error);

@@ -1,3 +1,4 @@
+// Lipur_ui/src/screens/MainRouter.tsx
 import React, { useState, useRef, useMemo } from 'react';
 import { 
     View, 
@@ -7,13 +8,7 @@ import {
 import TabBar from '../components/TabBar';
 import MiniPlayer from '../components/MiniPlayer';
 import NowPlayingScreen from './NowPlayingScreen';
-
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import { runOnJS } from 'react-native-reanimated';
-
-import {
-  BottomSheetModal,
-} from '@gorhom/bottom-sheet';
+import { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { usePlayerContext } from '../contexts/PlayerContext';
 
 // Screens
@@ -50,16 +45,6 @@ const MainRouter: React.FC = () => {
         }
     };
 
-    // 1. REMOVE TapGesture. We only want gestures for SWIPING up.
-    //    Clicking is now handled by the MiniPlayer itself.
-    const panGesture = Gesture.Pan()
-        .onUpdate((event) => {
-            if (event.translationY < -10) { 
-                runOnJS(openNowPlaying)();
-            }
-        })
-        .activeOffsetY([-10, 100]); 
-
     return (
         <View style={styles.container}>
             <StatusBar barStyle="light-content" backgroundColor="#121212" />
@@ -69,11 +54,8 @@ const MainRouter: React.FC = () => {
             </View>
 
             {currentTrack && (
-                // 2. Just use panGesture (no Race)
-                <GestureDetector gesture={panGesture}>
-                    {/* 3. Pass the onPress prop to MiniPlayer */}
-                    <MiniPlayer onPress={openNowPlaying} /> 
-                </GestureDetector>
+                /* 🔹 FIXED: Removed global GestureDetector wrapping to stop hit-test hijacking */
+                <MiniPlayer onPress={openNowPlaying} /> 
             )}
             
             <TabBar activeTab={activeTab} setTab={setActiveTab} />

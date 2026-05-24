@@ -1,18 +1,21 @@
+// Lipur_ui/src/components/CustomSlider.tsx
 import React, { useState, useEffect, useRef } from 'react';
-import { View, StyleSheet, Text, PanResponder, Animated, Pressable, Dimensions } from 'react-native';
+import { View, StyleSheet, Text, PanResponder, Animated, Pressable } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { usePlayerContext } from '../contexts/PlayerContext';
 
-const { width } = Dimensions.get('window');
-const SCREEN_MARGIN = 30; 
-const KNOB_SIZE = 8;     
+const KNOB_SIZE = 10;     
 
-const CustomSlider: React.FC = () => {
-  const { duration, position, seekTo, isPlaying } = usePlayerContext();
+interface CustomSliderProps {
+  isMiniPlayerVariant?: boolean; 
+}
+
+const CustomSlider: React.FC<CustomSliderProps> = ({ isMiniPlayerVariant = false }) => {
+  const { duration, position, seekTo } = usePlayerContext();
   const [sliderWidth, setSliderWidth] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
+  const [sliderLeft, setSliderLeft] = useState(0); 
   
-  // Animated Values
   const animatedX = useRef(new Animated.Value(0)).current;
   const knobScale = useRef(new Animated.Value(1)).current;
 
@@ -22,32 +25,34 @@ const CustomSlider: React.FC = () => {
       Animated.timing(animatedX, {
         toValue: newX,
         duration: 200, 
-        useNativeDriver: true,
+        useNativeDriver: true, // 🔹 Safely preserved!
       }).start();
     }
   }, [position, duration, sliderWidth, isDragging]);
 
   useEffect(() => {
-    Animated.spring(knobScale, {
-      toValue: isDragging ? 1.5 : 1,
-      useNativeDriver: true,
-      friction: 7,
-      tension: 100,
-    }).start();
-  }, [isDragging]);
+    if (!isMiniPlayerVariant) {
+      Animated.spring(knobScale, {
+        toValue: isDragging ? 1.4 : 1,
+        useNativeDriver: true,
+        friction: 6,
+        tension: 120,
+      }).start();
+    }
+  }, [isDragging, isMiniPlayerVariant]);
 
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onPanResponderGrant: () => setIsDragging(true),
-      onPanResponderMove: (_, g) => {
-        const localX = g.moveX - SCREEN_MARGIN;
+      onPanResponderMove: (e, g) => {
+        const localX = g.moveX - sliderLeft;
         const constrainedX = Math.min(Math.max(0, localX), sliderWidth);
         animatedX.setValue(constrainedX);
       },
-      onPanResponderRelease: async (_, g) => {
+      onPanResponderRelease: async (e, g) => {
         setIsDragging(false);
-        const localX = g.moveX - SCREEN_MARGIN;
+        const localX = g.moveX - sliderLeft;
         const constrainedX = Math.min(Math.max(0, localX), sliderWidth);
         
         if (sliderWidth > 0 && duration > 0) {
@@ -67,32 +72,33 @@ const CustomSlider: React.FC = () => {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, isMiniPlayerVariant && styles.miniContainerBypass]}>
       <Pressable
         onPress={handleTap}
-        style={styles.touchArea}
-        onLayout={e => setSliderWidth(e.nativeEvent.layout.width)}
-        {...panResponder.panHandlers}
+        style={[styles.touchArea, isMiniPlayerVariant && styles.miniTouchAreaBypass]}
+        onLayout={e => {
+          setSliderWidth(e.nativeEvent.layout.width);
+          e.currentTarget.measure((x, y, w, h, pageX) => {
+            setSliderLeft(pageX);
+          });
+        }}
+        {...(isMiniPlayerVariant ? {} : panResponder.panHandlers)}
       >
-        {/* 1. THE FIX: TRACK MASK 
-            We wrap the background and the progress bar in a view with overflow: 'hidden'.
-            This chops off the "sliding" part of the bar that is to the left of 0.
-        */}
-        <View style={styles.trackMask}>
-          {/* Track Background */}
+        <View style={[styles.trackMask, isMiniPlayerVariant && styles.miniTrackMaskBypass]}>
           <View style={styles.trackBackground} />
 
-          {/* Progress Fill */}
+          {/* 🔹 FIXED: Progress container width is now set statically, 
+              while the rendering fill shifts cleanly using native-supported transform animations! */}
           <Animated.View
             style={[
               styles.progressContainer,
               {
-                width: sliderWidth, // It is full width...
+                width: sliderWidth || 1, 
                 transform: [
                   {
                     translateX: animatedX.interpolate({
                       inputRange: [0, sliderWidth || 1],
-                      outputRange: [(-sliderWidth || 1), 0], // ...but slides in from the left
+                      outputRange: [-(sliderWidth || 1), 0], 
                       extrapolate: 'clamp',
                     }),
                   },
@@ -109,27 +115,27 @@ const CustomSlider: React.FC = () => {
           </Animated.View>
         </View>
 
-        {/* 2. THE KNOB (OUTSIDE THE MASK)
-            The knob stays outside the mask so it isn't cut in half 
-            when it is at the very start or very end.
-        */}
-        <Animated.View
-          style={[
-            styles.knob,
-            {
-              transform: [
-                { translateX: animatedX }, 
-                { scale: knobScale },      
-              ],
-            },
-          ]}
-        />
+        {!isMiniPlayerVariant && (
+          <Animated.View
+            style={[
+              styles.knob,
+              {
+                transform: [
+                  { translateX: animatedX }, 
+                  { scale: knobScale },      
+                ],
+              },
+            ]}
+          />
+        )}
       </Pressable>
 
-      <View style={styles.timeRow}>
-        <Text style={styles.timeText}>{formatTime(position)}</Text>
-        <Text style={styles.timeText}>{formatTime(duration)}</Text>
-      </View>
+      {!isMiniPlayerVariant && (
+        <View style={styles.timeRow}>
+          <Text style={styles.timeText}>{formatTime(position)}</Text>
+          <Text style={styles.timeText}>{formatTime(duration)}</Text>
+        </View>
+      )}
     </View>
   );
 };
@@ -142,58 +148,19 @@ const formatTime = (sec: number) => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    width: '100%',
-    justifyContent: 'center',
-  },
-  touchArea: {
-    height: 40,
-    justifyContent: 'center', 
-    width: '100%',
-  },
-  // NEW STYLE: Holds the track and clips the progress bar
-  trackMask: {
-    height: 2,
-    borderRadius: 2,
-    width: '100%',
-    overflow: 'hidden', // <--- THIS IS THE KEY FIX
-    position: 'relative', // Keeps children positioned relative to this
-    backgroundColor: 'rgba(255, 255, 255, 0.2)', // Moved background color here
-  },
-  trackBackground: {
-    ...StyleSheet.absoluteFillObject, // Fill the mask
-    backgroundColor: 'transparent', // Color is now on the mask
-  },
-  progressContainer: {
-    height: '100%', // Match mask height
-    position: 'absolute',
-    left: 0,
-  },
-  knob: {
-    position: 'absolute',
-    left: 0, 
-    marginLeft: -(KNOB_SIZE / 2), // Center knob on tip
-    width: KNOB_SIZE,
-    height: KNOB_SIZE,
-    borderRadius: KNOB_SIZE / 2,
-    backgroundColor: '#FFFFFF',
-    shadowColor: 'black',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 3,
-    elevation: 4,
-  },
-  timeRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 8,
-  },
-  timeText: {
-    color: 'rgba(255, 255, 255, 0.7)',
-    fontSize: 12,
-    fontWeight: '500',
-    fontVariant: ['tabular-nums'],
-  },
+  container: { width: '100%', justifyContent: 'center' },
+  miniContainerBypass: { width: '100%', position: 'absolute', bottom: 0, left: 0, right: 0 },
+  touchArea: { height: 32, justifyContent: 'center', width: '100%' },
+  miniTouchAreaBypass: { height: 2, padding: 0, margin: 0 },
+  
+  trackMask: { height: 3, borderRadius: 2, width: '100%', overflow: 'hidden', position: 'relative', backgroundColor: 'rgba(255, 255, 255, 0.12)' },
+  miniTrackMaskBypass: { height: 2, borderRadius: 0, backgroundColor: 'rgba(255, 255, 255, 0.06)' },
+  trackBackground: { ...StyleSheet.absoluteFillObject, backgroundColor: 'transparent' },
+  progressContainer: { height: '100%', position: 'absolute', left: 0 },
+  
+  knob: { position: 'absolute', left: 0, marginLeft: -(KNOB_SIZE / 2), width: KNOB_SIZE, height: KNOB_SIZE, borderRadius: KNOB_SIZE / 2, backgroundColor: '#FFFFFF', shadowColor: '#000', shadowOffset: { width: 0, height: 1.5 }, shadowOpacity: 0.25, shadowRadius: 2, elevation: 3 },
+  timeRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 6 },
+  timeText: { color: 'rgba(255, 255, 255, 0.5)', fontSize: 11, fontWeight: '600', fontVariant: ['tabular-nums'] },
 });
 
 export default CustomSlider;

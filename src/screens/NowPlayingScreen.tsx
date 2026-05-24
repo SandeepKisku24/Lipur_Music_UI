@@ -1,4 +1,5 @@
-import React from 'react';
+// Lipur_ui/src/screens/NowPlayingScreen.tsx
+import React, { useState, useEffect } from 'react';
 import { 
     View, 
     Text, 
@@ -14,10 +15,16 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import { usePlayerContext } from '../contexts/PlayerContext';
 import CustomSlider from '../components/CustomSlider';
 import { BlurView } from '@react-native-community/blur';
+import { downloadSongAsset } from '../services/downloadService';
+import auth from '@react-native-firebase/auth';
+import axios from 'axios';
 
 const { width } = Dimensions.get('window');
-// This creates a 30px margin on left and right
 const CONTENT_WIDTH = width - 60; 
+
+// Explicit fallback mapping to prevent undefined module variable exports from api.ts
+// const BACKEND_HOST = 'http://10.0.2.2:8080';
+const BACKEND_HOST = 'https://lipur-backend.onrender.com';
 
 type NowPlayingScreenProps = {
   onClose: () => void;
@@ -32,9 +39,48 @@ const NowPlayingScreen: React.FC<NowPlayingScreenProps> = ({ onClose }) => {
     playPreviousTrack 
   } = usePlayerContext();
 
+  const [isLiked, setIsLiked] = useState(false);
+
+  useEffect(() => {
+    if (currentTrack) {
+      setIsLiked(currentTrack.likes > 0);
+    }
+  }, [currentTrack]);
+
   if (!currentTrack) {
     return null;
   }
+
+  const toggleLike = async (songId: string) => {
+    try {
+      const user = auth().currentUser;
+      if (!user) return;
+      
+      // FIX WARNINGS: Call getIdToken() explicitly as a function per Firebase modular architecture updates
+      const token = await user.getIdToken(true);
+      
+      const nextLikedState = !isLiked;
+      setIsLiked(nextLikedState);
+
+      // Explicitly passing full route to bypass non-exported string variables safely
+      await axios.post(`${BACKEND_HOST}/songs/like`, 
+        {
+          songId,
+          action: nextLikedState ? 'like' : 'unlike'
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      console.log(`[Interaction Matrix] Successfully synchronized like parameters for: ${songId}`);
+    } catch (err) {
+      console.warn("Failed syncing player state change parameters with server context:", err);
+      setIsLiked(prev => !prev);
+    }
+  };
 
   return (
     <ImageBackground 
@@ -72,13 +118,35 @@ const NowPlayingScreen: React.FC<NowPlayingScreenProps> = ({ onClose }) => {
           />
         </View>
 
-        {/* Track Info */}
+        {/* Track Info Row Section */}
         <View style={styles.trackInfoContainer}>
-          <Text style={styles.title} numberOfLines={2}>{currentTrack.title}</Text>
-          <Text style={styles.artist} numberOfLines={1}>{currentTrack.artist}</Text>
+          <View style={styles.titleActionRow}>
+            <View style={{ flex: 1, alignItems: 'flex-start' }}>
+              <Text style={styles.title} numberOfLines={1}>{currentTrack.title}</Text>
+              <Text style={styles.artist} numberOfLines={1}>{currentTrack.artist}</Text>
+            </View>
+            
+            <TouchableOpacity 
+              style={styles.playerActionBtn} 
+              onPress={() => toggleLike(currentTrack.id)}
+            >
+              <Ionicons 
+                name={isLiked ? "heart" : "heart-outline"} 
+                size={28} 
+                color={isLiked ? "#1ed760" : "white"} 
+              />
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={styles.playerActionBtn} 
+              onPress={() => downloadSongAsset(currentTrack.id)}
+            >
+              <Ionicons name="cloud-download-outline" size={28} color="white" />
+            </TouchableOpacity>
+          </View>
         </View>
 
-        {/* Slider - STRICT WIDTH APPLIED HERE */}
+        {/* Slider */}
         <View style={styles.sliderContainer}>
           <CustomSlider />
         </View>
@@ -108,6 +176,16 @@ const NowPlayingScreen: React.FC<NowPlayingScreenProps> = ({ onClose }) => {
 };
 
 const styles = StyleSheet.create({
+  titleActionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  playerActionBtn: {
+    padding: 10,
+    marginLeft: 10,
+  },
   container: {
     flex: 1,
   },
@@ -142,8 +220,8 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   artworkContainer: {
-    width: CONTENT_WIDTH, // Strictly calculated
-    height: CONTENT_WIDTH, // Square
+    width: CONTENT_WIDTH, 
+    height: CONTENT_WIDTH, 
     marginTop: 40,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 20 },
@@ -158,26 +236,25 @@ const styles = StyleSheet.create({
   },
   trackInfoContainer: {
     width: '100%',
-    alignItems: 'center',
-    marginTop: 50,
-    paddingHorizontal: 40,
+    marginTop: 40,
+    paddingHorizontal: 30,
   },
   title: {
     color: 'white',
-    fontSize: 26,
+    fontSize: 24,
     fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 5,
+    textAlign: 'left',
+    marginBottom: 4,
   },
   artist: {
-    color: '#rgba(255,255,255,0.7)',
-    fontSize: 18,
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: 16,
     fontWeight: '500',
+    textAlign: 'left',
   },
   sliderContainer: {
-    width: CONTENT_WIDTH, // EXACTLY THE SAME AS ARTWORK
-    marginTop: 40,
-    // No padding needed here, the CustomSlider handles its own internal layout
+    width: CONTENT_WIDTH, 
+    marginTop: 30,
   },
   controlsContainer: {
     flexDirection: 'row',
